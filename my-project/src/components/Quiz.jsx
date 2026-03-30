@@ -141,7 +141,7 @@ function OptionButton({ option, state, onClick }) {
 }
 
 // ── Result Card ───────────────────────────────────────────────────────────────
-function ResultScreen({ score, total, percentage, onRetry, onHome }) {
+function ResultScreen({ score, total, percentage, results, questions, userAnswers, onRetry, onHome }) {
   const emoji = percentage >= 80 ? '🎉' : percentage >= 50 ? '👍' : '📚';
   const message =
     percentage >= 80
@@ -184,13 +184,56 @@ function ResultScreen({ score, total, percentage, onRetry, onHome }) {
           color: percentage >= 80 ? 'var(--correct)' : percentage >= 50 ? '#b45309' : 'var(--wrong)',
           fontWeight: 700,
           fontSize: 18,
-          marginBottom: 32,
+          marginBottom: 16,
         }}
       >
         {percentage}%
       </div>
 
-      <br />
+      <div style={{ textAlign: 'left', marginTop: 32, borderTop: '2px solid var(--border)', paddingTop: 32, marginBottom: 32 }}>
+        <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Review Your Answers</h3>
+        {questions && questions.map((q, idx) => {
+          const ans = userAnswers?.find(a => a.question_id === q.id);
+          const res = results?.find(r => r.question_id === q.id);
+          const selected = ans ? ans.selected_option_id : null;
+          const correctOpt = res ? res.correct_option_id : null;
+
+          return (
+            <div key={q.id} style={{ marginBottom: 24, padding: 20, background: 'var(--bg)', borderRadius: 12, border: '1px solid var(--border)' }}>
+              <p style={{ fontWeight: 600, fontSize: 16, marginBottom: 16, color: 'var(--text-primary)' }}>
+                {idx + 1}. {q.question}
+              </p>
+              <div>
+                {q.options.map(o => {
+                  let bg = '#fff';
+                  let border = '1px solid var(--border)';
+                  let icon = '';
+                  
+                  if (o.id === correctOpt) {
+                    bg = 'var(--correct-bg)';
+                    border = '2px solid var(--correct)';
+                    icon = '✅ ';
+                  } else if (o.id === selected && (!res || !res.correct)) {
+                    bg = 'var(--wrong-bg)';
+                    border = '2px solid var(--wrong)';
+                    icon = '❌ ';
+                  }
+
+                  return (
+                    <div key={o.id} style={{ padding: '10px 14px', marginBottom: 8, borderRadius: 8, background: bg, border: border, fontSize: 14, color: 'var(--text-primary)' }}>
+                      <span style={{ fontWeight: 700, marginRight: 8, color: o.id === correctOpt ? 'var(--correct)' : (o.id === selected ? 'var(--wrong)' : 'var(--text-secondary)') }}>
+                        {icon}{o.id.toUpperCase()}.
+                      </span>
+                      {o.text}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <button
         onClick={onRetry}
         style={{
@@ -350,7 +393,7 @@ export default function Quiz({ user, topic, onHome }) {
   }
 
   if (phase === 'result') {
-    return <ResultScreen {...result} onRetry={fetchQuestions} onHome={onHome} />;
+    return <ResultScreen {...result} questions={questions} userAnswers={answers} onRetry={fetchQuestions} onHome={onHome} />;
   }
 
   if (questions.length === 0) {
